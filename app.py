@@ -32,6 +32,8 @@ def main():
         st.session_state.active_call = None
     if 'show_forgot_password' not in st.session_state:
         st.session_state.show_forgot_password = False
+    if 'show_announcement_form' not in st.session_state:
+        st.session_state.show_announcement_form = False
     
     # Show login if not authenticated
     if not st.session_state.user:
@@ -44,8 +46,8 @@ def show_app():
     
     # Sidebar navigation
     with st.sidebar:
-        st.image("🎓", width=80)
-        st.write(f"**{st.session_state.user.get('name', 'User')}**")
+        st.markdown("# 🎓 Campus Connect")
+        st.write(f"**Welcome, {st.session_state.user.get('name', 'User')}**")
         st.write(f"🔹 {st.session_state.role.title()}")
         
         if st.session_state.role == 'student':
@@ -271,6 +273,7 @@ def show_clubs():
                             st.rerun()
             
             st.divider()
+
 def show_chat():
     st.title("💬 Campus Chat")
     
@@ -508,6 +511,7 @@ def show_active_call():
     if st.button("← Back to Calls"):
         st.session_state.active_call = None
         st.rerun()
+
 def show_confessions():
     st.title("🗣️ Campus Confessions")
     
