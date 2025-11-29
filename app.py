@@ -7,7 +7,7 @@ from database import (
     create_chat, send_message, get_chat_messages, create_call, 
     get_calls, get_user_calls, update_call_status, create_confession,
     get_confessions_for_students, get_confessions_for_admin, like_confession,
-    get_likes_count, add_comment, get_comments_for_students
+    get_likes_count, add_comment, get_comments_for_students, create_announcement
 )
 
 # Page configuration
@@ -34,6 +34,8 @@ def main():
         st.session_state.show_forgot_password = False
     if 'show_announcement_form' not in st.session_state:
         st.session_state.show_announcement_form = False
+    if 'page' not in st.session_state:
+        st.session_state.page = "Home"
     
     # Show login if not authenticated
     if not st.session_state.user:
@@ -63,45 +65,76 @@ def show_app():
 
 def show_student_navigation():
     """Student navigation menu"""
-    menu = st.radio("Navigate to:", 
-                   ["🏠 Home", "👤 Profile", "📢 Announcements", "👥 Clubs", "💬 Chat", "📞 Calls", "🗣️ Confessions"])
+    pages = {
+        "🏠 Home": "Home",
+        "👤 Profile": "Profile", 
+        "📢 Announcements": "Announcements",
+        "👥 Clubs": "Clubs",
+        "💬 Chat": "Chat",
+        "📞 Calls": "Calls",
+        "🗣️ Confessions": "Confessions"
+    }
     
-    if menu == "🏠 Home":
-        show_student_home()
-    elif menu == "👤 Profile":
-        show_student_profile()
-    elif menu == "📢 Announcements":
-        show_announcements()
-    elif menu == "👥 Clubs":
-        show_clubs()
-    elif menu == "💬 Chat":
-        show_chat()
-    elif menu == "📞 Calls":
-        show_calls()
-    elif menu == "🗣️ Confessions":
-        show_confessions()
+    selected = st.radio("Navigate to:", list(pages.keys()))
+    st.session_state.page = pages[selected]
+    
+    # Display the selected page
+    show_page()
 
 def show_admin_navigation():
     """Admin navigation menu"""
-    menu = st.radio("Admin Tools:", 
-                   ["📊 Dashboard", "👥 User Management", "📢 Announcements", "👥 Club Management", "🗣️ Confessions", "💬 Chat", "📞 Calls"])
+    pages = {
+        "📊 Dashboard": "Dashboard",
+        "👥 User Management": "UserManagement",
+        "📢 Announcements": "AnnouncementManagement", 
+        "👥 Club Management": "ClubManagement",
+        "🗣️ Confessions": "ConfessionManagement",
+        "💬 Chat": "Chat",
+        "📞 Calls": "Calls"
+    }
     
-    if menu == "📊 Dashboard":
-        show_admin_dashboard()
-    elif menu == "👥 User Management":
-        show_user_management()
-    elif menu == "📢 Announcements":
-        show_announcement_management()
-    elif menu == "👥 Club Management":
-        show_club_management()
-    elif menu == "🗣️ Confessions":
-        show_confessions_management()
-    elif menu == "💬 Chat":
-        show_chat()
-    elif menu == "📞 Calls":
-        show_calls()
+    selected = st.radio("Admin Tools:", list(pages.keys()))
+    st.session_state.page = pages[selected]
+    
+    # Display the selected page
+    show_page()
 
-# Student Features
+def show_page():
+    """Display the current page based on session state"""
+    page = st.session_state.page
+    
+    if st.session_state.role == 'student':
+        if page == "Home":
+            show_student_home()
+        elif page == "Profile":
+            show_student_profile()
+        elif page == "Announcements":
+            show_announcements()
+        elif page == "Clubs":
+            show_clubs()
+        elif page == "Chat":
+            show_chat()
+        elif page == "Calls":
+            show_calls()
+        elif page == "Confessions":
+            show_confessions()
+    else:  # Admin
+        if page == "Dashboard":
+            show_admin_dashboard()
+        elif page == "UserManagement":
+            show_user_management()
+        elif page == "AnnouncementManagement":
+            show_announcement_management()
+        elif page == "ClubManagement":
+            show_club_management()
+        elif page == "ConfessionManagement":
+            show_confessions_management()
+        elif page == "Chat":
+            show_chat()
+        elif page == "Calls":
+            show_calls()
+
+# Student Pages
 def show_student_home():
     st.title("🏠 Welcome to Campus Connect!")
     st.write(f"Hello, {st.session_state.user['name']}! 👋")
@@ -136,19 +169,23 @@ def show_student_home():
         if st.button("💬 Message Admin", use_container_width=True):
             chat_id = create_chat(st.session_state.user['email'], "MES.edu")
             st.session_state.current_chat = chat_id
+            st.session_state.page = "Chat"
             st.rerun()
     
     with col2:
         if st.button("📞 Call Admin", use_container_width=True):
             st.session_state.start_call_with = "MES.edu"
+            st.session_state.page = "Calls"
             st.rerun()
     
     with col3:
         if st.button("🗣️ Share Confession", use_container_width=True):
+            st.session_state.page = "Confessions"
             st.rerun()
     
     with col4:
         if st.button("👥 Browse Clubs", use_container_width=True):
+            st.session_state.page = "Clubs"
             st.rerun()
     
     st.divider()
@@ -176,6 +213,7 @@ def show_student_home():
                 st.caption(f"❤️ {likes} likes • 💬 {comments} comments")
                 
                 if st.button("Read More", key=f"read_more_{confession['id']}"):
+                    st.session_state.page = "Confessions"
                     st.rerun()
                 
                 st.divider()
@@ -342,6 +380,7 @@ def show_admin_chat_list():
                 st.rerun()
             if st.button("📞 Call", key=f"call_{email}"):
                 st.session_state.start_call_with = email
+                st.session_state.page = "Calls"
                 st.rerun()
         
         st.divider()
@@ -351,6 +390,7 @@ def show_chat_messages():
     messages = get_chat_messages(chat_id)
     
     # Display messages
+    st.subheader("Chat Messages")
     for msg in messages:
         if msg['sender'] == st.session_state.user['email']:
             st.write(f"**You:** {msg['message']}")
@@ -606,7 +646,7 @@ def show_confessions():
         else:
             st.info("No confessions yet. Be the first to share!")
 
-# Admin Features
+# Admin Pages
 def show_admin_dashboard():
     st.title("📊 Admin Dashboard")
     
@@ -638,25 +678,101 @@ def show_admin_dashboard():
     
     with col1:
         if st.button("📢 Create Announcement", use_container_width=True):
-            st.session_state.show_announcement_form = True
+            st.session_state.page = "AnnouncementManagement"
+            st.rerun()
     
     with col2:
         if st.button("👥 Manage Clubs", use_container_width=True):
+            st.session_state.page = "ClubManagement"
             st.rerun()
     
     with col3:
         if st.button("🗣️ Review Confessions", use_container_width=True):
+            st.session_state.page = "ConfessionManagement"
             st.rerun()
     
     with col4:
         if st.button("📞 Call Student", use_container_width=True):
+            st.session_state.page = "Calls"
             st.rerun()
+    
+    st.divider()
+    
+    # Recent activity
+    st.subheader("📈 Recent Activity")
+    
+    # Recent club requests
+    requests = db.load_data("club_requests.json")
+    pending_requests = [r for r in requests if r.get('status') == 'pending']
+    
+    if pending_requests:
+        st.write(f"**Pending Club Requests:** {len(pending_requests)}")
+        for request in pending_requests[-3:]:
+            st.write(f"• {request['student_email']} wants to join club")
+    else:
+        st.write("**Pending Club Requests:** 0")
+    
+    st.divider()
+    
+    # Recent confessions needing approval
+    confessions = get_confessions_for_admin()
+    pending_confessions = [c for c in confessions if not c.get('is_approved', False)]
+    
+    if pending_confessions:
+        st.write(f"**Confessions Pending Approval:** {len(pending_confessions)}")
+        for confession in pending_confessions[-2:]:
+            st.write(f"• New confession in {confession.get('category', 'General')}")
+    else:
+        st.write("**Confessions Pending Approval:** 0")
+
+def show_user_management():
+    st.title("👥 User Management")
+    students = db.load_data("students.json")
+    
+    if students:
+        st.subheader(f"Total Students: {len(students)}")
+        
+        for email, student in students.items():
+            with st.container():
+                col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
+                
+                with col1:
+                    st.write(f"**{student['name']}**")
+                    st.caption(f"{email}")
+                
+                with col2:
+                    st.write(f"**Major:** {student.get('major', 'N/A')}")
+                    st.write(f"**Year:** {student.get('year', 'N/A')}")
+                
+                with col3:
+                    clubs = get_clubs()
+                    user_clubs = [club for club in clubs.values() if email in club.get('members', [])]
+                    st.write(f"**Clubs Joined:** {len(user_clubs)}")
+                    if user_clubs:
+                        club_names = [club['name'] for club in user_clubs[:2]]
+                        st.caption(", ".join(club_names))
+                
+                with col4:
+                    if st.button("View", key=f"view_{email}"):
+                        st.session_state.viewing_student = email
+                
+                st.divider()
+    else:
+        st.info("No students registered yet.")
+
+def show_announcement_management():
+    st.title("📢 Announcement Management")
+    
+    col1, col2 = st.columns([3, 1])
+    
+    with col2:
+        if st.button("➕ Create New Announcement", use_container_width=True):
+            st.session_state.show_announcement_form = True
     
     # Announcement form
     if st.session_state.get('show_announcement_form'):
-        st.divider()
+        st.subheader("Create New Announcement")
         with st.form("announcement_form"):
-            st.subheader("Create New Announcement")
             title = st.text_input("Title")
             message = st.text_area("Message", height=150)
             category = st.selectbox("Category", ["general", "events", "academic", "urgent"])
@@ -684,40 +800,11 @@ def show_admin_dashboard():
                 if st.button("Cancel", use_container_width=True):
                     st.session_state.show_announcement_form = False
                     st.rerun()
-
-def show_user_management():
-    st.title("👥 User Management")
-    students = db.load_data("students.json")
     
-    if students:
-        for email, student in students.items():
-            with st.container():
-                col1, col2, col3 = st.columns([3, 2, 1])
-                
-                with col1:
-                    st.write(f"**{student['name']}**")
-                    st.caption(f"{email} • {student.get('major', 'N/A')} • {student.get('year', 'N/A')}")
-                
-                with col2:
-                    clubs = get_clubs()
-                    user_clubs = [club for club in clubs.values() if email in club.get('members', [])]
-                    st.write(f"Clubs: {len(user_clubs)}")
-                
-                with col3:
-                    if st.button("View Profile", key=f"view_{email}"):
-                        st.session_state.viewing_student = email
-                
-                st.divider()
-    else:
-        st.info("No students registered yet.")
-
-def show_announcement_management():
-    st.title("📢 Announcement Management")
+    st.divider()
     
-    # Create announcement button
-    if st.button("➕ Create New Announcement"):
-        st.session_state.show_announcement_form = True
-    
+    # Existing announcements
+    st.subheader("Existing Announcements")
     announcements = db.load_data("announcements.json")
     
     if announcements:
@@ -778,6 +865,8 @@ def show_club_management():
                             st.rerun()
                 
                 st.divider()
+    else:
+        st.info("No pending club requests.")
     
     # Club management section
     st.subheader("🏢 Manage Clubs")
@@ -797,6 +886,16 @@ def show_club_management():
                     st.write(f"• {student.get('name', member_email)}")
             else:
                 st.write("**Members:** No members yet")
+            
+            # Pending requests for this club
+            club_pending = [r for r in pending_requests if r['club_id'] == club_id]
+            if club_pending:
+                st.write("**Pending Requests:**")
+                for request in club_pending:
+                    student_email = request['student_email']
+                    students = db.load_data("students.json")
+                    student = students.get(student_email, {})
+                    st.write(f"• {student.get('name', student_email)}")
 
 def show_confessions_management():
     st.title("🗣️ Confessions Management")
@@ -816,20 +915,33 @@ def show_confessions_management():
                 col1, col2 = st.columns(2)
                 with col1:
                     if st.button("✅ Approve", key=f"approve_conf_{confession['id']}"):
-                        # Implementation for approving confessions
+                        # Update confession approval status
+                        confessions = db.load_data("confessions.json")
+                        for conf in confessions:
+                            if conf['id'] == confession['id']:
+                                conf['is_approved'] = True
+                                break
+                        db.save_data("confessions.json", confessions)
                         st.success("Confession approved!")
                         st.rerun()
                 with col2:
                     if st.button("❌ Reject", key=f"reject_conf_{confession['id']}"):
-                        # Implementation for rejecting confessions
+                        # Remove confession
+                        confessions = db.load_data("confessions.json")
+                        confessions = [conf for conf in confessions if conf['id'] != confession['id']]
+                        db.save_data("confessions.json", confessions)
                         st.success("Confession rejected!")
                         st.rerun()
                 st.divider()
+    else:
+        st.info("No confessions pending approval.")
     
     # All confessions
     st.subheader("📋 All Confessions")
-    for confession in confessions:
-        if confession.get('is_approved', False):
+    approved_confessions = [c for c in confessions if c.get('is_approved', False)]
+    
+    if approved_confessions:
+        for confession in approved_confessions:
             with st.container():
                 st.write(f"**{confession.get('category', 'General')}**")
                 st.write(confession.get('text', ''))
@@ -840,10 +952,16 @@ def show_confessions_management():
                 st.caption(f"❤️ {likes} likes • 💬 {comments} comments")
                 
                 if st.button("Delete", key=f"del_conf_{confession['id']}"):
-                    # Implementation for deleting confessions
-                    st.warning("Delete functionality to be implemented")
+                    # Remove confession
+                    confessions = db.load_data("confessions.json")
+                    confessions = [conf for conf in confessions if conf['id'] != confession['id']]
+                    db.save_data("confessions.json", confessions)
+                    st.success("Confession deleted!")
+                    st.rerun()
                 
                 st.divider()
+    else:
+        st.info("No approved confessions yet.")
 
 if __name__ == "__main__":
     main()
