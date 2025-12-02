@@ -24,114 +24,99 @@ def main():
         st.session_state.user = None
     if 'role' not in st.session_state:
         st.session_state.role = None
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "Home"
     if 'current_chat' not in st.session_state:
         st.session_state.current_chat = None
     if 'start_call_with' not in st.session_state:
         st.session_state.start_call_with = None
     if 'active_call' not in st.session_state:
         st.session_state.active_call = None
-    if 'show_forgot_password' not in st.session_state:
-        st.session_state.show_forgot_password = False
-    if 'show_announcement_form' not in st.session_state:
-        st.session_state.show_announcement_form = False
-    if 'page' not in st.session_state:
-        st.session_state.page = "Home"
     
     # Show login if not authenticated
     if not st.session_state.user:
         login_page()
     else:
-        show_app()
+        show_main_app()
 
-def show_app():
-    """Show the main application based on user role"""
+def show_main_app():
+    """Show the main application with sidebar navigation"""
     
     # Sidebar navigation
     with st.sidebar:
         st.markdown("# 🎓 Campus Connect")
         st.write(f"**Welcome, {st.session_state.user.get('name', 'User')}**")
-        st.write(f"🔹 {st.session_state.role.title()}")
+        st.write(f"**Role:** {st.session_state.role.title()}")
         
         if st.session_state.role == 'student':
-            st.write(f"📚 {st.session_state.user.get('major', 'Student')}")
-            show_student_navigation()
-        else:
+            st.write(f"**Major:** {st.session_state.user.get('major', 'Student')}")
+            st.write(f"**Year:** {st.session_state.user.get('year', '')}")
+            
+            # Student navigation
+            st.markdown("---")
+            st.subheader("Student Navigation")
+            pages = [
+                "🏠 Home", "👤 Profile", "📢 Announcements", 
+                "👥 Clubs", "💬 Chat", "📞 Calls", "🗣️ Confessions"
+            ]
+            
+            selected_page = st.radio("Go to:", pages, key="student_nav")
+            st.session_state.current_page = selected_page
+            
+        else:  # Admin
             st.write("⚡ Administrator")
-            show_admin_navigation()
+            
+            # Admin navigation
+            st.markdown("---")
+            st.subheader("Admin Tools")
+            pages = [
+                "📊 Dashboard", "👥 User Management", "📢 Announcements", 
+                "👥 Club Management", "🗣️ Confessions", "💬 Chat", "📞 Calls"
+            ]
+            
+            selected_page = st.radio("Go to:", pages, key="admin_nav")
+            st.session_state.current_page = selected_page
         
-        st.divider()
+        st.markdown("---")
         if st.button("🚪 Logout", use_container_width=True):
             logout()
+    
+    # Main content area
+    display_current_page()
 
-def show_student_navigation():
-    """Student navigation menu"""
-    pages = {
-        "🏠 Home": "Home",
-        "👤 Profile": "Profile", 
-        "📢 Announcements": "Announcements",
-        "👥 Clubs": "Clubs",
-        "💬 Chat": "Chat",
-        "📞 Calls": "Calls",
-        "🗣️ Confessions": "Confessions"
-    }
-    
-    selected = st.radio("Navigate to:", list(pages.keys()))
-    st.session_state.page = pages[selected]
-    
-    # Display the selected page
-    show_page()
-
-def show_admin_navigation():
-    """Admin navigation menu"""
-    pages = {
-        "📊 Dashboard": "Dashboard",
-        "👥 User Management": "UserManagement",
-        "📢 Announcements": "AnnouncementManagement", 
-        "👥 Club Management": "ClubManagement",
-        "🗣️ Confessions": "ConfessionManagement",
-        "💬 Chat": "Chat",
-        "📞 Calls": "Calls"
-    }
-    
-    selected = st.radio("Admin Tools:", list(pages.keys()))
-    st.session_state.page = pages[selected]
-    
-    # Display the selected page
-    show_page()
-
-def show_page():
-    """Display the current page based on session state"""
-    page = st.session_state.page
+def display_current_page():
+    """Display the current page based on selection"""
+    page = st.session_state.current_page
     
     if st.session_state.role == 'student':
-        if page == "Home":
+        if page == "🏠 Home":
             show_student_home()
-        elif page == "Profile":
+        elif page == "👤 Profile":
             show_student_profile()
-        elif page == "Announcements":
+        elif page == "📢 Announcements":
             show_announcements()
-        elif page == "Clubs":
+        elif page == "👥 Clubs":
             show_clubs()
-        elif page == "Chat":
+        elif page == "💬 Chat":
             show_chat()
-        elif page == "Calls":
+        elif page == "📞 Calls":
             show_calls()
-        elif page == "Confessions":
+        elif page == "🗣️ Confessions":
             show_confessions()
     else:  # Admin
-        if page == "Dashboard":
+        if page == "📊 Dashboard":
             show_admin_dashboard()
-        elif page == "UserManagement":
+        elif page == "👥 User Management":
             show_user_management()
-        elif page == "AnnouncementManagement":
+        elif page == "📢 Announcements":
             show_announcement_management()
-        elif page == "ClubManagement":
+        elif page == "👥 Club Management":
             show_club_management()
-        elif page == "ConfessionManagement":
-            show_confessions_management()
-        elif page == "Chat":
+        elif page == "🗣️ Confessions":
+            show_confession_management()
+        elif page == "💬 Chat":
             show_chat()
-        elif page == "Calls":
+        elif page == "📞 Calls":
             show_calls()
 
 # Student Pages
@@ -169,97 +154,74 @@ def show_student_home():
         if st.button("💬 Message Admin", use_container_width=True):
             chat_id = create_chat(st.session_state.user['email'], "MES.edu")
             st.session_state.current_chat = chat_id
-            st.session_state.page = "Chat"
+            st.session_state.current_page = "💬 Chat"
             st.rerun()
     
     with col2:
         if st.button("📞 Call Admin", use_container_width=True):
             st.session_state.start_call_with = "MES.edu"
-            st.session_state.page = "Calls"
+            st.session_state.current_page = "📞 Calls"
             st.rerun()
     
     with col3:
         if st.button("🗣️ Share Confession", use_container_width=True):
-            st.session_state.page = "Confessions"
+            st.session_state.current_page = "🗣️ Confessions"
             st.rerun()
     
     with col4:
         if st.button("👥 Browse Clubs", use_container_width=True):
-            st.session_state.page = "Clubs"
+            st.session_state.current_page = "👥 Clubs"
             st.rerun()
-    
-    st.divider()
-    
-    # Recent confessions preview
-    st.subheader("💭 Recent Campus Confessions")
-    confessions = get_confessions_for_students()
-    recent_confessions = [c for c in confessions if c.get('is_approved', True)][-2:]
-    
-    if recent_confessions:
-        for confession in recent_confessions:
-            with st.container():
-                category_emoji = confession.get('category', '💭 General').split(' ')[0]
-                st.write(f"**{category_emoji} {confession.get('category', 'General')}**")
-                st.caption("👤 Anonymous")
-                
-                confession_text = confession.get('text', '')
-                if len(confession_text) > 100:
-                    st.write(confession_text[:100] + "...")
-                else:
-                    st.write(confession_text)
-                
-                likes = get_likes_count(confession)
-                comments = len(get_comments_for_students(confession))
-                st.caption(f"❤️ {likes} likes • 💬 {comments} comments")
-                
-                if st.button("Read More", key=f"read_more_{confession['id']}"):
-                    st.session_state.page = "Confessions"
-                    st.rerun()
-                
-                st.divider()
-    else:
-        st.info("No confessions yet. Be the first to share your thoughts!")
     
     st.divider()
     
     # Recent announcements
     st.subheader("📢 Recent Announcements")
     announcements = db.load_data("announcements.json")[-3:]
-    for announcement in announcements:
-        with st.container():
-            priority = announcement.get('priority', 'medium')
-            emoji = "🔴" if priority == "high" else "🟡" if priority == "medium" else "🟢"
-            st.write(f"{emoji} **{announcement.get('title', 'No Title')}**")
-            st.write(announcement.get('message', '')[:100] + "..." if len(announcement.get('message', '')) > 100 else announcement.get('message', ''))
-            st.caption(f"By {announcement.get('author', 'Admin')} • {announcement.get('created_date', '')[:10]}")
-            st.divider()
+    
+    if announcements:
+        for announcement in announcements:
+            with st.container():
+                priority = announcement.get('priority', 'medium')
+                emoji = "🔴" if priority == "high" else "🟡" if priority == "medium" else "🟢"
+                st.write(f"{emoji} **{announcement.get('title', 'No Title')}**")
+                message = announcement.get('message', '')
+                if len(message) > 150:
+                    st.write(f"{message[:150]}...")
+                else:
+                    st.write(message)
+                st.caption(f"By {announcement.get('author', 'Admin')} • {announcement.get('created_date', '')[:10]}")
+                st.divider()
+    else:
+        st.info("No announcements yet.")
 
 def show_student_profile():
-    st.title("👤 Your Profile")
-    user = st.session_state.user
+    st.title("👤 Student Profile")
     
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns([2, 1])
     
     with col1:
-        st.write(f"**Name:** {user['name']}")
-        st.write(f"**Email:** {user['email']}")
-        st.write(f"**Year:** {user.get('year', 'Not set')}")
-        st.write(f"**Major:** {user.get('major', 'Not set')}")
-        st.write(f"**Member since:** {user.get('joined_date', 'Today')[:10]}")
+        st.subheader("Personal Information")
+        st.write(f"**Name:** {st.session_state.user['name']}")
+        st.write(f"**Email:** {st.session_state.user['email']}")
+        st.write(f"**Year:** {st.session_state.user.get('year', 'Not specified')}")
+        st.write(f"**Major:** {st.session_state.user.get('major', 'Not specified')}")
+        st.write(f"**Member since:** {st.session_state.user.get('joined_date', 'Today')[:10]}")
     
     with col2:
-        # Clubs joined
+        st.subheader("Club Memberships")
         clubs = get_clubs()
         user_clubs = [club for club in clubs.values() if st.session_state.user['email'] in club.get('members', [])]
-        st.write("**Clubs Joined:**")
+        
         if user_clubs:
             for club in user_clubs:
-                st.write(f"• {club['name']}")
+                st.success(f"✅ {club['name']}")
         else:
-            st.write("No clubs joined yet")
+            st.info("Not joined any clubs yet")
 
 def show_announcements():
     st.title("📢 Campus Announcements")
+    
     announcements = db.load_data("announcements.json")
     
     if announcements:
@@ -272,7 +234,7 @@ def show_announcements():
                 st.caption(f"By {announcement.get('author', 'Admin')} • {announcement.get('created_date', '')[:10]}")
                 st.divider()
     else:
-        st.info("No announcements yet.")
+        st.info("No announcements available.")
 
 def show_clubs():
     st.title("👥 Campus Clubs")
@@ -280,37 +242,32 @@ def show_clubs():
     clubs = get_clubs()
     current_user = st.session_state.user['email']
     
-    categories = {
-        "technology": "💻 Technology",
-        "debate": "🗣️ Debate", 
-        "arts": "🎨 Arts",
-        "sports": "🏀 Sports",
-        "science": "🔬 Science"
-    }
-    
-    for club_id, club in clubs.items():
-        with st.container():
-            category_emoji = categories.get(club.get('category', 'general'), '👥')
-            
-            col1, col2 = st.columns([3, 1])
-            
-            with col1:
-                st.write(f"**{category_emoji} {club['name']}**")
-                st.write(club['description'])
-                st.caption(f"👥 {len(club.get('members', []))} members • 📅 {club.get('meeting_schedule', 'Schedule TBA')}")
-            
-            with col2:
-                if current_user in club.get('members', []):
-                    st.success("✅ Joined")
-                elif current_user in club.get('pending_requests', []):
-                    st.info("⏳ Pending Approval")
-                else:
-                    if st.button("Request to Join", key=f"join_{club_id}"):
-                        if join_club_request(current_user, club_id):
-                            st.success("Join request sent! Waiting for admin approval.")
-                            st.rerun()
-            
-            st.divider()
+    if clubs:
+        for club_id, club in clubs.items():
+            with st.container():
+                col1, col2 = st.columns([3, 1])
+                
+                with col1:
+                    st.subheader(club['name'])
+                    st.write(club['description'])
+                    st.caption(f"📍 {club.get('location', 'TBA')}")
+                    st.caption(f"📅 {club.get('meeting_schedule', 'Schedule TBA')}")
+                    st.caption(f"👥 {len(club.get('members', []))} members")
+                
+                with col2:
+                    if current_user in club.get('members', []):
+                        st.success("✅ Joined")
+                    elif current_user in club.get('pending_requests', []):
+                        st.info("⏳ Pending Approval")
+                    else:
+                        if st.button("Join Club", key=f"join_{club_id}"):
+                            if join_club_request(current_user, club_id):
+                                st.success("Join request sent!")
+                                st.rerun()
+                
+                st.divider()
+    else:
+        st.info("No clubs available at the moment.")
 
 def show_chat():
     st.title("💬 Campus Chat")
@@ -324,147 +281,121 @@ def show_chat_list():
     st.subheader("Start a Conversation")
     
     if st.session_state.role == 'student':
-        show_student_chat_list()
-    else:
-        show_admin_chat_list()
-
-def show_student_chat_list():
-    current_user = st.session_state.user['email']
-    
-    # Chat with Admin
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.write("**👑 Campus Administrator**")
-        st.caption("Get help with platform issues, club approvals, and general inquiries")
-    with col2:
-        if st.button("Message Admin", key="msg_admin"):
-            chat_id = create_chat(current_user, "MES.edu")
+        # Student can chat with admin and other students
+        st.write("**Chat with Administrator**")
+        if st.button("💬 Message Admin", key="admin_chat"):
+            chat_id = create_chat(st.session_state.user['email'], "MES.edu")
             st.session_state.current_chat = chat_id
             st.rerun()
-    st.divider()
-    
-    # Chat with other students
-    students = db.load_data("students.json")
-    for email, student in students.items():
-        if email != current_user:
-            col1, col2 = st.columns([3, 1])
-            with col1:
-                st.write(f"**{student['name']}**")
-                st.caption(f"{student.get('major', 'Student')} • {student.get('year', '')}")
-            with col2:
-                if st.button("Message", key=f"msg_{email}"):
-                    chat_id = create_chat(current_user, email)
-                    st.session_state.current_chat = chat_id
-                    st.rerun()
-            st.divider()
-
-def show_admin_chat_list():
-    students = db.load_data("students.json")
-    
-    for email, student in students.items():
-        col1, col2, col3 = st.columns([3, 2, 1])
-        
-        with col1:
-            st.write(f"**{student['name']}**")
-            st.caption(f"{student.get('major', 'Student')} • {student.get('year', '')}")
-        
-        with col2:
-            clubs = get_clubs()
-            user_clubs = [club for club in clubs.values() if email in club.get('members', [])]
-            st.caption(f"Clubs: {len(user_clubs)}")
-        
-        with col3:
-            if st.button("💬 Chat", key=f"chat_{email}"):
-                chat_id = create_chat("MES.edu", email)
-                st.session_state.current_chat = chat_id
-                st.rerun()
-            if st.button("📞 Call", key=f"call_{email}"):
-                st.session_state.start_call_with = email
-                st.session_state.page = "Calls"
-                st.rerun()
         
         st.divider()
+        
+        # Other students
+        students = db.load_data("students.json")
+        other_students = [s for s in students.items() if s[0] != st.session_state.user['email']]
+        
+        if other_students:
+            st.write("**Other Students**")
+            for email, student in other_students:
+                if st.button(f"💬 {student['name']} ({student.get('major', 'Student')})", key=f"chat_{email}"):
+                    chat_id = create_chat(st.session_state.user['email'], email)
+                    st.session_state.current_chat = chat_id
+                    st.rerun()
+        else:
+            st.info("No other students registered yet.")
+    
+    else:  # Admin
+        students = db.load_data("students.json")
+        
+        if students:
+            for email, student in students.items():
+                if st.button(f"💬 {student['name']} - {student.get('major', 'Student')}", key=f"admin_chat_{email}"):
+                    chat_id = create_chat("MES.edu", email)
+                    st.session_state.current_chat = chat_id
+                    st.rerun()
+        else:
+            st.info("No students registered yet.")
 
 def show_chat_messages():
     chat_id = st.session_state.current_chat
     messages = get_chat_messages(chat_id)
     
-    # Display messages
+    # Display chat header
     st.subheader("Chat Messages")
-    for msg in messages:
-        if msg['sender'] == st.session_state.user['email']:
-            st.write(f"**You:** {msg['message']}")
-            st.caption(f"Sent at {msg['timestamp'][11:16]}")
-        else:
-            sender_name = "Admin" if msg['sender'] == "MES.edu" else msg['sender']
-            st.write(f"**{sender_name}:** {msg['message']}")
+    
+    # Display messages
+    chat_container = st.container()
+    with chat_container:
+        for msg in messages:
+            if msg['sender'] == st.session_state.user['email']:
+                st.write(f"**You:** {msg['message']}")
+            else:
+                sender_name = "Admin" if msg['sender'] == "MES.edu" else msg['sender']
+                st.write(f"**{sender_name}:** {msg['message']}")
             st.caption(f"Sent at {msg['timestamp'][11:16]}")
     
     # Message input
     st.divider()
-    new_message = st.text_input("Type your message...")
-    col1, col2 = st.columns([4, 1])
+    new_message = st.text_input("Type your message...", key="new_message")
     
+    col1, col2 = st.columns([1, 4])
     with col1:
         if st.button("Send") and new_message.strip():
             send_message(chat_id, st.session_state.user['email'], new_message.strip())
             st.rerun()
-    
     with col2:
-        if st.button("← Back"):
+        if st.button("Back to Chat List"):
             st.session_state.current_chat = None
             st.rerun()
 
 def show_calls():
-    st.title("📞 Calls")
+    st.title("📞 Voice/Video Calls")
     
-    if st.session_state.get('start_call_with'):
+    if st.session_state.start_call_with:
         show_call_interface()
-    elif st.session_state.get('active_call'):
+    elif st.session_state.active_call:
         show_active_call()
     else:
-        show_call_history()
+        show_call_dashboard()
 
-def show_call_history():
-    user_email = st.session_state.user['email']
-    calls = get_user_calls(user_email)
+def show_call_dashboard():
+    st.subheader("Start a Call")
     
+    if st.session_state.role == 'student':
+        # Student can call admin
+        if st.button("📞 Call Administrator", use_container_width=True):
+            st.session_state.start_call_with = "MES.edu"
+            st.rerun()
+    else:
+        # Admin can call students
+        students = db.load_data("students.json")
+        
+        if students:
+            for email, student in students.items():
+                if st.button(f"📞 Call {student['name']}", key=f"call_{email}", use_container_width=True):
+                    st.session_state.start_call_with = email
+                    st.rerun()
+        else:
+            st.info("No students available to call.")
+    
+    st.divider()
     st.subheader("Call History")
     
+    calls = get_user_calls(st.session_state.user['email'])
     if calls:
-        for call in calls[-10:]:
+        for call in calls[-5:]:
             with st.container():
-                participants = call.get('participants', [])
-                other_participants = [p for p in participants if p != user_email]
+                other_participants = [p for p in call['participants'] if p != st.session_state.user['email']]
+                other_user = other_participants[0] if other_participants else "Unknown"
                 
-                col1, col2, col3 = st.columns([3, 2, 1])
-                
+                col1, col2, col3 = st.columns([2, 1, 1])
                 with col1:
-                    if len(other_participants) == 1:
-                        other_email = other_participants[0]
-                        if other_email == "MES.edu":
-                            st.write("**👑 Campus Administrator**")
-                        else:
-                            students = db.load_data("students.json")
-                            student = students.get(other_email, {})
-                            st.write(f"**{student.get('name', other_email)}**")
-                    
-                    st.caption(f"📅 {call.get('start_time', '')[:16]}")
-                
+                    st.write(f"**With:** {other_user}")
                 with col2:
-                    call_type = "📹 Video" if call.get('type') == 'video' else "📞 Voice"
-                    duration = call.get('duration', '0m')
-                    st.write(f"{call_type} • {duration}")
-                
+                    st.write(f"**Type:** {call['type']}")
                 with col3:
-                    status = call.get('status', 'ended')
-                    if status == 'ended':
-                        st.success("✅ Completed")
-                    elif status == 'missed':
-                        st.error("❌ Missed")
-                    else:
-                        st.info("🔄 Active")
-                
+                    st.write(f"**Status:** {call['status']}")
+                st.caption(f"Time: {call.get('start_time', '')[:16]}")
                 st.divider()
     else:
         st.info("No call history yet.")
@@ -472,27 +403,23 @@ def show_call_history():
 def show_call_interface():
     target_email = st.session_state.start_call_with
     students = db.load_data("students.json")
-    target_user = students.get(target_email, {"name": "User"})
+    target_name = students.get(target_email, {}).get('name', 'User') if target_email != "MES.edu" else "Administrator"
     
-    st.title(f"📞 Call {target_user['name']}")
+    st.title(f"📞 Calling {target_name}")
     
-    call_type = st.radio("Call Type:", ["📞 Voice Call", "📹 Video Call"])
-    
-    if st.session_state.role == 'admin':
-        call_purpose = st.text_area("Call Purpose/Notes:")
+    call_type = st.radio("Call Type:", ["Voice Call", "Video Call"])
     
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("🎤 Start Call", use_container_width=True, type="primary"):
+        if st.button("Start Call", type="primary", use_container_width=True):
             call_data = {
                 "id": str(uuid.uuid4()),
                 "participants": [st.session_state.user['email'], target_email],
-                "type": "video" if "Video" in call_type else "voice",
+                "type": "video" if call_type == "Video Call" else "voice",
                 "start_time": datetime.now().isoformat(),
                 "status": "active",
-                "initiator": st.session_state.user['email'],
-                "purpose": call_purpose if st.session_state.role == 'admin' else ""
+                "initiator": st.session_state.user['email']
             }
             create_call(call_data)
             st.session_state.active_call = call_data
@@ -500,7 +427,7 @@ def show_call_interface():
             st.rerun()
     
     with col2:
-        if st.button("← Cancel", use_container_width=True):
+        if st.button("Cancel Call", use_container_width=True):
             st.session_state.start_call_with = None
             st.rerun()
 
@@ -509,63 +436,49 @@ def show_active_call():
     
     st.title("📞 Active Call")
     
-    participants = call.get('participants', [])
-    other_participants = [p for p in participants if p != st.session_state.user['email']]
+    participants = call['participants']
+    other_user = [p for p in participants if p != st.session_state.user['email']][0]
+    students = db.load_data("students.json")
+    other_name = students.get(other_user, {}).get('name', 'User') if other_user != "MES.edu" else "Administrator"
     
-    if other_participants:
-        other_email = other_participants[0]
-        if other_email == "MES.edu":
-            st.write("**Talking with: 👑 Campus Administrator**")
-        else:
-            students = db.load_data("students.json")
-            student = students.get(other_email, {})
-            st.write(f"**Talking with: {student.get('name', other_email)}**")
+    st.write(f"**In call with:** {other_name}")
+    st.write(f"**Call type:** {call['type'].title()} Call")
+    st.write("**Status:** 🔴 Live")
     
     # Call controls
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("🎤 Mute", use_container_width=True):
-            st.info("Microphone muted")
+        if st.button("Mute Audio", use_container_width=True):
+            st.info("Audio muted")
     
     with col2:
-        if st.button("🔇 Silence", use_container_width=True):
-            st.info("Audio silenced")
+        if st.button("Disable Video", use_container_width=True):
+            st.info("Video disabled")
     
     with col3:
-        if call.get('type') == 'video':
-            if st.button("📹 Stop Video", use_container_width=True):
-                st.info("Video stopped")
-    
-    with col4:
-        if st.button("📞 End Call", use_container_width=True, type="primary"):
+        if st.button("End Call", type="primary", use_container_width=True):
             update_call_status(call['id'], 'ended')
             st.session_state.active_call = None
-            st.success("Call ended successfully")
+            st.success("Call ended")
             st.rerun()
-    
-    # Simulated call duration
-    st.write("---")
-    st.write("**Call in progress...** ⏱️")
-    
-    if st.button("← Back to Calls"):
-        st.session_state.active_call = None
-        st.rerun()
 
 def show_confessions():
     st.title("🗣️ Campus Confessions")
     
-    tab1, tab2 = st.tabs(["📝 Share Confession", "💭 View Confessions"])
+    tab1, tab2 = st.tabs(["Share Confession", "View Confessions"])
     
     with tab1:
+        st.subheader("Share Your Confession")
         with st.form("confession_form"):
-            category = st.selectbox("Category", 
-                                  ["💭 General", "💕 Relationships", "📚 Academics", 
-                                   "😔 Regrets", "🎉 Achievements", "🤔 Advice"])
-            confession_text = st.text_area("Your Confession", height=150, 
+            category = st.selectbox("Category", [
+                "💭 General", "💕 Relationships", "📚 Academics", 
+                "😔 Regrets", "🎉 Achievements", "🤔 Advice"
+            ])
+            confession_text = st.text_area("Your confession", height=150, 
                                          placeholder="Share your thoughts anonymously...")
             
-            if st.form_submit_button("Share Confession", use_container_width=True):
+            if st.form_submit_button("Share Confession"):
                 if confession_text.strip():
                     confession_data = {
                         "id": str(uuid.uuid4()),
@@ -573,7 +486,7 @@ def show_confessions():
                         "category": category,
                         "user_email": st.session_state.user['email'],
                         "created_date": datetime.now().isoformat(),
-                        "is_approved": True if st.session_state.role == 'admin' else False,
+                        "is_approved": st.session_state.role == 'admin',  # Auto-approve for admin
                         "likes": [],
                         "comments": []
                     }
@@ -582,23 +495,22 @@ def show_confessions():
                         st.success("Confession shared successfully! 🎉")
                         if st.session_state.role == 'student':
                             st.info("Your confession is pending admin approval.")
-                        st.rerun()
                 else:
                     st.error("Please write your confession")
     
     with tab2:
+        st.subheader("Campus Confessions")
         confessions = get_confessions_for_students()
-        approved_confessions = [c for c in confessions if c.get('is_approved', True)]
         
-        if approved_confessions:
-            for confession in approved_confessions:
+        if confessions:
+            for confession in confessions:
                 with st.container():
-                    st.write(f"**{confession.get('category', 'General')}**")
-                    st.write(confession.get('text', ''))
+                    st.write(f"**{confession['category']}**")
+                    st.write(confession['text'])
                     
                     # Likes and comments
-                    likes_count = get_likes_count(confession)
-                    comments = get_comments_for_students(confession)
+                    likes_count = len(confession.get('likes', []))
+                    comments_count = len(confession.get('comments', []))
                     
                     col1, col2, col3 = st.columns([1, 1, 2])
                     
@@ -609,24 +521,30 @@ def show_confessions():
                                 st.rerun()
                     
                     with col2:
-                        if st.button(f"💬 {len(comments)}", key=f"comment_btn_{confession['id']}"):
-                            st.session_state[f"show_comments_{confession['id']}"] = True
+                        if st.button(f"💬 {comments_count}", key=f"comment_btn_{confession['id']}"):
+                            # Toggle comments view
+                            if f"show_comments_{confession['id']}" not in st.session_state:
+                                st.session_state[f"show_comments_{confession['id']}"] = True
+                            else:
+                                st.session_state[f"show_comments_{confession['id']}"] = not st.session_state[f"show_comments_{confession['id']}"]
+                            st.rerun()
                     
                     with col3:
-                        st.caption(f"Posted {confession.get('created_date', '')[:10]}")
+                        st.caption(f"Posted on {confession['created_date'][:10]}")
                     
-                    # Comments section
+                    # Show comments if toggled
                     if st.session_state.get(f"show_comments_{confession['id']}"):
                         st.divider()
                         st.write("**Comments:**")
                         
+                        comments = get_comments_for_students(confession)
                         for comment in comments:
-                            st.write(f"👤 **Anonymous:** {comment.get('text', '')}")
-                            st.caption(f"Posted {comment.get('created_date', '')[:10]}")
+                            st.write(f"👤 Anonymous: {comment.get('text', '')}")
+                            st.caption(f"Posted on {comment.get('created_date', '')[:10]}")
                         
                         # Add comment
                         with st.form(f"add_comment_{confession['id']}"):
-                            new_comment = st.text_input("Add a comment...")
+                            new_comment = st.text_input("Add a comment...", key=f"new_comment_{confession['id']}")
                             if st.form_submit_button("Post Comment"):
                                 if new_comment.strip():
                                     comment_data = {
@@ -637,10 +555,6 @@ def show_confessions():
                                     if add_comment(confession['id'], comment_data, st.session_state.user['email']):
                                         st.success("Comment added!")
                                         st.rerun()
-                        
-                        if st.button("Hide Comments", key=f"hide_{confession['id']}"):
-                            st.session_state[f"show_comments_{confession['id']}"] = False
-                            st.rerun()
                     
                     st.divider()
         else:
@@ -674,87 +588,66 @@ def show_admin_dashboard():
     
     # Quick actions
     st.subheader("Quick Actions")
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         if st.button("📢 Create Announcement", use_container_width=True):
-            st.session_state.page = "AnnouncementManagement"
+            st.session_state.current_page = "📢 Announcements"
             st.rerun()
     
     with col2:
-        if st.button("👥 Manage Clubs", use_container_width=True):
-            st.session_state.page = "ClubManagement"
+        if st.button("👥 Manage Club Requests", use_container_width=True):
+            st.session_state.current_page = "👥 Club Management"
             st.rerun()
     
     with col3:
         if st.button("🗣️ Review Confessions", use_container_width=True):
-            st.session_state.page = "ConfessionManagement"
-            st.rerun()
-    
-    with col4:
-        if st.button("📞 Call Student", use_container_width=True):
-            st.session_state.page = "Calls"
+            st.session_state.current_page = "🗣️ Confessions"
             st.rerun()
     
     st.divider()
     
     # Recent activity
-    st.subheader("📈 Recent Activity")
+    st.subheader("Recent Activity")
     
-    # Recent club requests
+    # Pending club requests
     requests = db.load_data("club_requests.json")
     pending_requests = [r for r in requests if r.get('status') == 'pending']
     
     if pending_requests:
-        st.write(f"**Pending Club Requests:** {len(pending_requests)}")
-        for request in pending_requests[-3:]:
-            st.write(f"• {request['student_email']} wants to join club")
+        st.write(f"**Pending Club Join Requests:** {len(pending_requests)}")
+        for request in pending_requests[:3]:
+            student_email = request['student_email']
+            student = students.get(student_email, {})
+            st.write(f"• {student.get('name', student_email)} wants to join a club")
     else:
-        st.write("**Pending Club Requests:** 0")
-    
-    st.divider()
-    
-    # Recent confessions needing approval
-    confessions = get_confessions_for_admin()
-    pending_confessions = [c for c in confessions if not c.get('is_approved', False)]
-    
-    if pending_confessions:
-        st.write(f"**Confessions Pending Approval:** {len(pending_confessions)}")
-        for confession in pending_confessions[-2:]:
-            st.write(f"• New confession in {confession.get('category', 'General')}")
-    else:
-        st.write("**Confessions Pending Approval:** 0")
+        st.write("No pending club requests")
 
 def show_user_management():
     st.title("👥 User Management")
+    
     students = db.load_data("students.json")
     
     if students:
-        st.subheader(f"Total Students: {len(students)}")
+        st.subheader(f"Registered Students ({len(students)})")
         
         for email, student in students.items():
             with st.container():
-                col1, col2, col3, col4 = st.columns([3, 2, 2, 1])
+                col1, col2, col3 = st.columns([3, 2, 1])
                 
                 with col1:
                     st.write(f"**{student['name']}**")
-                    st.caption(f"{email}")
+                    st.caption(f"Email: {email}")
                 
                 with col2:
-                    st.write(f"**Major:** {student.get('major', 'N/A')}")
-                    st.write(f"**Year:** {student.get('year', 'N/A')}")
+                    st.write(f"Major: {student.get('major', 'Not specified')}")
+                    st.write(f"Year: {student.get('year', 'Not specified')}")
                 
                 with col3:
+                    # Count clubs joined
                     clubs = get_clubs()
-                    user_clubs = [club for club in clubs.values() if email in club.get('members', [])]
-                    st.write(f"**Clubs Joined:** {len(user_clubs)}")
-                    if user_clubs:
-                        club_names = [club['name'] for club in user_clubs[:2]]
-                        st.caption(", ".join(club_names))
-                
-                with col4:
-                    if st.button("View", key=f"view_{email}"):
-                        st.session_state.viewing_student = email
+                    clubs_joined = sum(1 for club in clubs.values() if email in club.get('members', []))
+                    st.write(f"Clubs: {clubs_joined}")
                 
                 st.divider()
     else:
@@ -763,43 +656,30 @@ def show_user_management():
 def show_announcement_management():
     st.title("📢 Announcement Management")
     
-    col1, col2 = st.columns([3, 1])
-    
-    with col2:
-        if st.button("➕ Create New Announcement", use_container_width=True):
-            st.session_state.show_announcement_form = True
-    
-    # Announcement form
-    if st.session_state.get('show_announcement_form'):
-        st.subheader("Create New Announcement")
-        with st.form("announcement_form"):
-            title = st.text_input("Title")
-            message = st.text_area("Message", height=150)
-            category = st.selectbox("Category", ["general", "events", "academic", "urgent"])
-            priority = st.selectbox("Priority", ["high", "medium", "low"])
+    # Create announcement
+    with st.expander("Create New Announcement", expanded=True):
+        with st.form("create_announcement"):
+            title = st.text_input("Announcement Title")
+            message = st.text_area("Announcement Message", height=100)
+            priority = st.selectbox("Priority Level", ["low", "medium", "high"])
             
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.form_submit_button("Publish Announcement", use_container_width=True):
-                    if title and message:
-                        announcement_data = {
-                            "id": str(uuid.uuid4()),
-                            "title": title,
-                            "message": message,
-                            "category": category,
-                            "priority": priority,
-                            "author": st.session_state.user['name'],
-                            "created_date": datetime.now().isoformat(),
-                            "expiry_date": None
-                        }
-                        if create_announcement(announcement_data):
-                            st.success("Announcement published!")
-                            st.session_state.show_announcement_form = False
-                            st.rerun()
-            with col2:
-                if st.button("Cancel", use_container_width=True):
-                    st.session_state.show_announcement_form = False
-                    st.rerun()
+            if st.form_submit_button("Publish Announcement"):
+                if title and message:
+                    announcement_data = {
+                        "id": str(uuid.uuid4()),
+                        "title": title,
+                        "message": message,
+                        "category": "general",
+                        "priority": priority,
+                        "author": st.session_state.user['name'],
+                        "created_date": datetime.now().isoformat(),
+                        "expiry_date": None
+                    }
+                    if create_announcement(announcement_data):
+                        st.success("Announcement published successfully!")
+                        st.rerun()
+                else:
+                    st.error("Please fill in both title and message")
     
     st.divider()
     
@@ -810,23 +690,14 @@ def show_announcement_management():
     if announcements:
         for announcement in announcements:
             with st.container():
-                col1, col2 = st.columns([4, 1])
-                
-                with col1:
-                    priority = announcement.get('priority', 'medium')
-                    emoji = "🔴" if priority == "high" else "🟡" if priority == "medium" else "🟢"
-                    st.write(f"{emoji} **{announcement.get('title', 'No Title')}**")
-                    st.write(announcement.get('message', ''))
-                    st.caption(f"By {announcement.get('author', 'Admin')} • {announcement.get('created_date', '')[:10]}")
-                
-                with col2:
-                    if st.button("Delete", key=f"del_{announcement['id']}"):
-                        # Implementation for deleting announcements
-                        st.warning("Delete functionality to be implemented")
-                
+                priority = announcement.get('priority', 'medium')
+                emoji = "🔴" if priority == "high" else "🟡" if priority == "medium" else "🟢"
+                st.write(f"{emoji} **{announcement['title']}**")
+                st.write(announcement['message'])
+                st.caption(f"By {announcement.get('author', 'Admin')} • {announcement['created_date'][:10]}")
                 st.divider()
     else:
-        st.info("No announcements yet.")
+        st.info("No announcements created yet.")
 
 def show_club_management():
     st.title("👥 Club Management")
@@ -835,7 +706,7 @@ def show_club_management():
     requests = db.load_data("club_requests.json")
     pending_requests = [r for r in requests if r.get('status') == 'pending']
     
-    # Pending requests section
+    # Pending requests
     if pending_requests:
         st.subheader("📥 Pending Join Requests")
         for request in pending_requests:
@@ -852,31 +723,29 @@ def show_club_management():
                 with col1:
                     st.write(f"**{student.get('name', student_email)}**")
                     st.caption(f"Wants to join: **{club.get('name', 'Unknown Club')}**")
-                    st.caption(f"Requested: {request.get('request_date', '')[:10]}")
                 
                 with col2:
                     st.write(f"Major: {student.get('major', 'N/A')}")
                     st.write(f"Year: {student.get('year', 'N/A')}")
                 
                 with col3:
-                    if st.button("✅ Approve", key=f"approve_{request['id']}"):
+                    if st.button("Approve", key=f"approve_{request['id']}"):
                         if approve_club_request(request['id'], club_id, student_email):
                             st.success("Request approved!")
                             st.rerun()
                 
                 st.divider()
     else:
-        st.info("No pending club requests.")
+        st.info("No pending club join requests.")
     
-    # Club management section
-    st.subheader("🏢 Manage Clubs")
+    # Club details
+    st.subheader("🏢 Club Details")
     for club_id, club in clubs.items():
-        with st.expander(f"📋 {club['name']} - {len(club.get('members', []))} members"):
+        with st.expander(f"{club['name']} - {len(club.get('members', []))} members"):
             st.write(f"**Description:** {club['description']}")
-            st.write(f"**Meeting Schedule:** {club.get('meeting_schedule', 'Not set')}")
+            st.write(f"**Schedule:** {club.get('meeting_schedule', 'Not set')}")
             st.write(f"**Location:** {club.get('location', 'Not set')}")
             
-            # Members list
             members = club.get('members', [])
             if members:
                 st.write("**Members:**")
@@ -885,77 +754,65 @@ def show_club_management():
                     student = students.get(member_email, {})
                     st.write(f"• {student.get('name', member_email)}")
             else:
-                st.write("**Members:** No members yet")
-            
-            # Pending requests for this club
-            club_pending = [r for r in pending_requests if r['club_id'] == club_id]
-            if club_pending:
-                st.write("**Pending Requests:**")
-                for request in club_pending:
-                    student_email = request['student_email']
-                    students = db.load_data("students.json")
-                    student = students.get(student_email, {})
-                    st.write(f"• {student.get('name', student_email)}")
+                st.write("No members yet")
 
-def show_confessions_management():
-    st.title("🗣️ Confessions Management")
+def show_confession_management():
+    st.title("🗣️ Confession Management")
     
     confessions = get_confessions_for_admin()
     pending_confessions = [c for c in confessions if not c.get('is_approved', False)]
     
-    # Pending confessions for approval
+    # Pending approval
     if pending_confessions:
         st.subheader("⏳ Pending Approval")
         for confession in pending_confessions:
             with st.container():
-                st.write(f"**{confession.get('category', 'General')}**")
-                st.write(confession.get('text', ''))
-                st.caption(f"Submitted: {confession.get('created_date', '')[:10]}")
+                st.write(f"**{confession['category']}**")
+                st.write(confession['text'])
                 
                 col1, col2 = st.columns(2)
                 with col1:
-                    if st.button("✅ Approve", key=f"approve_conf_{confession['id']}"):
-                        # Update confession approval status
-                        confessions = db.load_data("confessions.json")
-                        for conf in confessions:
+                    if st.button("Approve", key=f"approve_{confession['id']}"):
+                        # Approve confession
+                        confessions_data = db.load_data("confessions.json")
+                        for conf in confessions_data:
                             if conf['id'] == confession['id']:
                                 conf['is_approved'] = True
                                 break
-                        db.save_data("confessions.json", confessions)
+                        db.save_data("confessions.json", confessions_data)
                         st.success("Confession approved!")
                         st.rerun()
+                
                 with col2:
-                    if st.button("❌ Reject", key=f"reject_conf_{confession['id']}"):
-                        # Remove confession
-                        confessions = db.load_data("confessions.json")
-                        confessions = [conf for conf in confessions if conf['id'] != confession['id']]
-                        db.save_data("confessions.json", confessions)
-                        st.success("Confession rejected!")
+                    if st.button("Delete", key=f"delete_{confession['id']}"):
+                        # Delete confession
+                        confessions_data = [c for c in db.load_data("confessions.json") if c['id'] != confession['id']]
+                        db.save_data("confessions.json", confessions_data)
+                        st.success("Confession deleted!")
                         st.rerun()
+                
                 st.divider()
     else:
         st.info("No confessions pending approval.")
     
-    # All confessions
-    st.subheader("📋 All Confessions")
+    # Approved confessions
+    st.subheader("✅ Approved Confessions")
     approved_confessions = [c for c in confessions if c.get('is_approved', False)]
     
     if approved_confessions:
         for confession in approved_confessions:
             with st.container():
-                st.write(f"**{confession.get('category', 'General')}**")
-                st.write(confession.get('text', ''))
-                st.caption(f"Posted: {confession.get('created_date', '')[:10]}")
+                st.write(f"**{confession['category']}**")
+                st.write(confession['text'])
                 
-                likes = get_likes_count(confession)
-                comments = len(confession.get('comments', []))
-                st.caption(f"❤️ {likes} likes • 💬 {comments} comments")
+                likes_count = len(confession.get('likes', []))
+                comments_count = len(confession.get('comments', []))
                 
-                if st.button("Delete", key=f"del_conf_{confession['id']}"):
-                    # Remove confession
-                    confessions = db.load_data("confessions.json")
-                    confessions = [conf for conf in confessions if conf['id'] != confession['id']]
-                    db.save_data("confessions.json", confessions)
+                st.caption(f"❤️ {likes_count} likes • 💬 {comments_count} comments • Posted on {confession['created_date'][:10]}")
+                
+                if st.button("Delete", key=f"del_{confession['id']}"):
+                    confessions_data = [c for c in db.load_data("confessions.json") if c['id'] != confession['id']]
+                    db.save_data("confessions.json", confessions_data)
                     st.success("Confession deleted!")
                     st.rerun()
                 
